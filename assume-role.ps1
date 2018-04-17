@@ -105,7 +105,7 @@ else {
 
 # store the credential into environment variable
 $env:AWS_ACCESS_KEY_ID = $RoleCred.AccessKeyId
-$env:AWS_SECRET_ACCESS_KEY	= $RoleCred.SecretAccessKey
+$env:AWS_SECRET_ACCESS_KEY = $RoleCred.SecretAccessKey
 $env:AWS_SESSION_TOKEN = $RoleCred.SessionToken
 
 write-host "You've assumed the role $role" -ForegroundColor Green
