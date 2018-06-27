@@ -10,7 +10,10 @@ Param (
     [string]$role,
 
     # AWS profile (optional)
-    [string]$profile
+    [string]$profile,
+
+    # Use MFA or not (optional), default is true
+    [string]$requiremfa="true"
 
 )
 
@@ -30,7 +33,7 @@ if (!$role) {
 }
 
 # Prompt user to enter the mfa code if they didn't supply one when calling this script
-if (!$mfacode) {
+if ( ($requiremfa = "true") -and (!$mfacode) ) {
     $mfacode = Read-Host "Please enter your mfa code"
 }
 
@@ -44,12 +47,15 @@ if (!$profile){
         exit 1
     }
     
-    # Get the MFA arn from the username
-    $mfaarn = $(Get-IAMMFADevice -UserName $username -ErrorVariable err).SerialNumber
-    if ($err){
-        write-host $err
-        write-host "Error!!! failed to get the mfa arn from the username $username"
-        exit 1
+    # Get the MFA arn from the username if mfa required is true
+    if ($requiremfa = "true")
+    {
+        $mfaarn = $(Get-IAMMFADevice -UserName $username -ErrorVariable err).SerialNumber
+        if ($err){  
+            write-host $err
+            write-host "Error!!! failed to get the mfa arn from the username $username"
+            exit 1
+        }
     }    
     
     # Get the role ARN from the role name
@@ -61,11 +67,21 @@ if (!$profile){
     }    
 
     # assume the role and get the temp credential
-    $RoleCred = $(Use-STSRole -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
-    if ($err) {
-        Write-Host $err
-        write-Host "Error!!! failed to assume the role $role"
-        exit 1
+    if ($requiremfa = "true") {
+        $RoleCred = $(Use-STSRole -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
+        if ($err) {
+            Write-Host $err
+            write-Host "Error!!! failed to assume the role $role"
+            exit 1
+        }
+    }
+    else {
+        $RoleCred = $(Use-STSRole -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -ErrorVariable err).Credentials
+        if ($err) {
+            Write-Host $err
+            write-Host "Error!!! failed to assume the role $role"
+            exit 1
+        }
     }    
 }
 else {
@@ -79,12 +95,14 @@ else {
     }
     
     # Get the MFA arn from the username
-    $mfaarn = $(Get-IAMMFADevice -profilename $profile -UserName $username -ErrorVariable err).SerialNumber
-    if ($err){
-        write-host $err
-        write-host "Error!!! failed to get the mfa arn from the username $username"
-        exit 1
-    }    
+    if ($requiremfa = "true") {
+        $mfaarn = $(Get-IAMMFADevice -profilename $profile -UserName $username -ErrorVariable err).SerialNumber
+        if ($err){
+            write-host $err
+            write-host "Error!!! failed to get the mfa arn from the username $username"
+            exit 1
+        }
+    }   
     
     # Get the role ARN from the role name
     $rolearn = $(Get-IAMRole -profilename $profile -RoleName $role -ErrorVariable err).Arn
@@ -95,11 +113,21 @@ else {
     }    
 
     # assume the role and get the temp credential
-    $RoleCred = $(Use-STSRole -ProfileName $profile -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
-    if ($err) {
-        write-host $err
-        write-Host "Error!!! failed to assume the role $role"
-        exit 1
+    if ($requiremfa = "true") {
+        $RoleCred = $(Use-STSRole -ProfileName $profile -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
+        if ($err) {
+            write-host $err
+            write-Host "Error!!! failed to assume the role $role"
+            exit 1
+        }
+    }
+    else {
+        $RoleCred = $(Use-STSRole -ProfileName $profile -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -ErrorVariable err).Credentials
+        if ($err) {
+            write-host $err
+            write-Host "Error!!! failed to assume the role $role"
+            exit 1
+        }
     }
 }
 
