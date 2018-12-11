@@ -34,4 +34,4 @@ PS C:\temp> .\assume-role.ps1 -profile <your profile> -role <name of the IAM rol
 ```
 
 # To verify you've assumed the role
-Issue the Get-IAMUser command, if you see an error return said "Must specify userName when calling with non-User credentials" This mean you are using the assumed role made the Get-IAMUser call.
+Issue the Get-STSCallerIdentity command, you should see it returns the account name and the arn of the role you've assumed
