@@ -52,17 +52,17 @@ if ( ($requiremfa -eq "true") -and (!$mfacode) ) {
 
 if (!$profilename){
     
-    # Get username from access key
-    $username = $(Get-IAMUser -ErrorVariable err).UserName
-    if ($err) {
-        write-host $err
-        write-host "Error!!! failed to get username from your access key"
-        exit 1
-    }
     
     # Get the MFA arn from the username if mfa required is true
     if ($requiremfa -eq "true")
     {
+        # Get username from access key
+        $username = $(Get-IAMUser -ErrorVariable err).UserName
+        if ($err) {
+            write-host $err
+            write-host "Error!!! failed to get username from your access key"
+            exit 1
+        }
         $mfaarn = $(Get-IAMMFADevice -UserName $username -ErrorVariable err).SerialNumber
         if ($err){  
             write-host $err
@@ -101,16 +101,15 @@ if (!$profilename){
 }
 else {
     
-    # Get username from access key
-    $username = $(Get-IAMUser -profilename $profilename -ErrorVariable err).UserName
-    if ($err) {
-        write-host $err
-        write-host "Error!!! failed to get username from your access key"
-        exit 1
-    }
-    
     # Get the MFA arn from the username
     if ($requiremfa -eq "true") {
+        # Get username from access key
+        $username = $(Get-IAMUser -profilename $profilename -ErrorVariable err).UserName
+        if ($err) {
+            write-host $err
+            write-host "Error!!! failed to get username from your access key"
+            exit 1
+        }
         $mfaarn = $(Get-IAMMFADevice -profilename $profilename -UserName $username -ErrorVariable err).SerialNumber
         if ($err){
             write-host $err
