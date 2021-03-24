@@ -16,7 +16,10 @@ Param (
     [string]$profilename,
 
     # Use MFA or not (optional), default is true
-    [string]$requiremfa="true"
+    [string]$requiremfa="true",
+
+    # Session name for the assume role
+    [string]$sessionname
 
 )
 
@@ -28,6 +31,11 @@ catch {
     write-host $_.Exception.Message
     write-host "Error!!! AWS Tools for powershell is not installed on this system"
     exit 1
+}
+
+# Generate a random session name if user didn't supply one
+if (!$sessionname){
+    $sessionname = $(New-Guid).ToString()
 }
 
 # Prompt user to enter the role name or arn if they didn't supply one
@@ -83,7 +91,7 @@ if (!$profilename){
 
     # assume the role and get the temp credential
     if ($requiremfa -eq "true") {
-        $RoleCred = $(Use-STSRole -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
+        $RoleCred = $(Use-STSRole -RoleArn $rolearn -RoleSessionName $sessionname -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
         if ($err) {
             Write-Host $err
             write-Host "Error!!! failed to assume the role $role"
@@ -91,7 +99,7 @@ if (!$profilename){
         }
     }
     else {
-        $RoleCred = $(Use-STSRole -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -ErrorVariable err).Credentials
+        $RoleCred = $(Use-STSRole -RoleArn $rolearn -RoleSessionName $sessionname -ErrorVariable err).Credentials
         if ($err) {
             Write-Host $err
             write-Host "Error!!! failed to assume the role $role"
@@ -130,7 +138,7 @@ else {
 
     # assume the role and get the temp credential
     if ($requiremfa -eq "true") {
-        $RoleCred = $(Use-STSRole -ProfileName $profilename -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
+        $RoleCred = $(Use-STSRole -ProfileName $profilename -RoleArn $rolearn -RoleSessionName $sessionname -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
         if ($err) {
             write-host $err
             write-Host "Error!!! failed to assume the role $role"
@@ -138,7 +146,7 @@ else {
         }
     }
     else {
-        $RoleCred = $(Use-STSRole -ProfileName $profilename -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -ErrorVariable err).Credentials
+        $RoleCred = $(Use-STSRole -ProfileName $profilename -RoleArn $rolearn -RoleSessionName $sessionname -ErrorVariable err).Credentials
         if ($err) {
             write-host $err
             write-Host "Error!!! failed to assume the role $role"
@@ -152,5 +160,5 @@ $env:AWS_ACCESS_KEY_ID = $RoleCred.AccessKeyId
 $env:AWS_SECRET_ACCESS_KEY = $RoleCred.SecretAccessKey
 $env:AWS_SESSION_TOKEN = $RoleCred.SessionToken
 
-write-host "You've assumed the role $role" -ForegroundColor Green
+write-host "You've assumed the role $role , the session name is $sessionname" -ForegroundColor Green
 Read-Host "Press enter to contine the session"
