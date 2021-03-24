@@ -23,14 +23,14 @@ Please enter your mfa code: <your mfa code>
 
 If you wanted to use a named profile, you can
 ```
-PS C:\temp> .\assume-role.ps1 -profile <your profile>
+PS C:\temp> .\assume-role.ps1 -profilename <your profile>
 Please enter the name of the role you wanted to assume: <name of the iam role you wanted to assume>
 Please enter your mfa code: <your mfa code>
 ```
 
 Or If you dont want to wait for the script to ask you for the IAM role name and MFA code, you can
 ```
-PS C:\temp> .\assume-role.ps1 -profile <your profile> -role <name of the IAM role you want to assume> -mfacode <your mfa code>
+PS C:\temp> .\assume-role.ps1 -profilename <your profile> -role <name of the IAM role you want to assume> -mfacode <your mfa code>
 ```
 
 # To verify you've assumed the role

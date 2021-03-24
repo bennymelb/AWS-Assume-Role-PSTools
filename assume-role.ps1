@@ -13,7 +13,7 @@ Param (
     [string]$rolearn, 
 
     # AWS profile (optional)
-    [string]$profile,
+    [string]$profilename,
 
     # Use MFA or not (optional), default is true
     [string]$requiremfa="true"
@@ -40,7 +40,7 @@ if ( ($requiremfa = "true") -and (!$mfacode) ) {
     $mfacode = Read-Host "Please enter your mfa code"
 }
 
-if (!$profile){
+if (!$profilename){
     
     # Get username from access key
     $username = $(Get-IAMUser -ErrorVariable err).UserName
@@ -92,7 +92,7 @@ if (!$profile){
 else {
     
     # Get username from access key
-    $username = $(Get-IAMUser -profilename $profile -ErrorVariable err).UserName
+    $username = $(Get-IAMUser -profilename $profilename -ErrorVariable err).UserName
     if ($err) {
         write-host $err
         write-host "Error!!! failed to get username from your access key"
@@ -101,7 +101,7 @@ else {
     
     # Get the MFA arn from the username
     if ($requiremfa = "true") {
-        $mfaarn = $(Get-IAMMFADevice -profilename $profile -UserName $username -ErrorVariable err).SerialNumber
+        $mfaarn = $(Get-IAMMFADevice -profilename $profilename -UserName $username -ErrorVariable err).SerialNumber
         if ($err){
             write-host $err
             write-host "Error!!! failed to get the mfa arn from the username $username"
@@ -111,17 +111,17 @@ else {
     
     # Get the role ARN from the role name
     if (!$rolearn){
-        $rolearn = $(Get-IAMRole -profilename $profile -RoleName $role -ErrorVariable err).Arn
+        $rolearn = $(Get-IAMRole -profilename $profilename -RoleName $role -ErrorVariable err).Arn
         if ($err) {
             write-host $err
             write-host "Error!!! failed to get the role $role arn"
             exit 1
         }    
     }
-    
+
     # assume the role and get the temp credential
     if ($requiremfa = "true") {
-        $RoleCred = $(Use-STSRole -ProfileName $profile -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
+        $RoleCred = $(Use-STSRole -ProfileName $profilename -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
         if ($err) {
             write-host $err
             write-Host "Error!!! failed to assume the role $role"
@@ -129,7 +129,7 @@ else {
         }
     }
     else {
-        $RoleCred = $(Use-STSRole -ProfileName $profile -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -ErrorVariable err).Credentials
+        $RoleCred = $(Use-STSRole -ProfileName $profilename -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -ErrorVariable err).Credentials
         if ($err) {
             write-host $err
             write-Host "Error!!! failed to assume the role $role"
