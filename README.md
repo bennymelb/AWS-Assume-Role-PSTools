@@ -17,21 +17,44 @@ e.g.
 Assume you've downloaded assume-role.ps1 in C:\temp
 ```
 PS C:\temp> .\assume-role.ps1
-Please enter the name of the role you wanted to assume: <name of the iam role you wanted to assume>
-Please enter your mfa code: <your mfa code>
+Please enter the name of the role you wanted to assume: myiamrole
+Please enter the arn of the role you want to assume, leave this blank if the role you want to assume is in the same aws account: 123456789
+Please enter your username, you can leave this blank if you want the script retrieve your username from access key: myusername
+Please enter your mfa code: 123456
 ```
 
 If you wanted to use a named profile, you can
 ```
-PS C:\temp> .\assume-role.ps1 -profilename <your profile>
-Please enter the name of the role you wanted to assume: <name of the iam role you wanted to assume>
-Please enter your mfa code: <your mfa code>
+PS C:\temp> .\assume-role.ps1 -profilename myprofile
+Please enter the name of the role you wanted to assume: myiamrole
+Please enter the arn of the role you want to assume, leave this blank if the role you want to assume is in the same aws account:
+Please enter your username, you can leave this blank if you want the script retrieve your username from access key:
+Please enter your mfa code: 123456
 ```
 
-Or If you dont want to wait for the script to ask you for the IAM role name and MFA code, you can
+If you dont want to wait for the script to ask you for the IAM role name and MFA code, you can
 ```
-PS C:\temp> .\assume-role.ps1 -profilename <your profile> -role <name of the IAM role you want to assume> -mfacode <your mfa code>
+PS C:\temp> .\assume-role.ps1 -profilename myprofile -role myiamrole -mfacode 123456
 ```
+
+If you want to assume a role in a different aws account, you can
+```
+PS C:\temp> .\assume-role.ps1 -role myiamrole -awsaccountid 123456789 
+```
+
+If MFA is required but your access key does not have permission to retrieve the username, you will need to supply it
+```
+PS C:\temp> .\assume-role.ps1 -role myiamrole -awsaccountid 123456789 -username myusername
+``` 
+
+# List of parameter you can pass into this script
+- mfacode
+- role
+- awsaccountid
+- profilename
+- requiremfa
+- sessionname
+- username
 
 # To verify you've assumed the role
 Issue the Get-STSCallerIdentity command, you should see it returns the account name and the arn of the role you've assumed
