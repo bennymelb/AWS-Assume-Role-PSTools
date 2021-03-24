@@ -30,13 +30,23 @@ catch {
     exit 1
 }
 
-# Prompt user to enter the role name if they didn't supply one
-if (!$role) {
-    $role = Read-Host "Please enter the name of the role you wanted to assume"
+# Prompt user to enter the role name or arn if they didn't supply one
+if ( (!$role) -and (!$rolearn) ) {
+    $sw = Read-Host "Are you supplying just the role name or the full arn [ role | rolearn ]"
+    if ($sw -eq "role") {
+        $role = Read-Host "Please enter the name of the role you wanted to assume"
+    }
+    elseif ($sw -eq "rolearn") {
+        $rolearn = Read-Host "Please enter the arn of the role you want to assume"
+    }
+    else {
+        Read-Host "Invalid input detected, press any button to exit"
+        exit 1
+    }
 }
 
 # Prompt user to enter the mfa code if they didn't supply one when calling this script
-if ( ($requiremfa = "true") -and (!$mfacode) ) {
+if ( ($requiremfa -eq "true") -and (!$mfacode) ) {
     $mfacode = Read-Host "Please enter your mfa code"
 }
 
@@ -51,7 +61,7 @@ if (!$profilename){
     }
     
     # Get the MFA arn from the username if mfa required is true
-    if ($requiremfa = "true")
+    if ($requiremfa -eq "true")
     {
         $mfaarn = $(Get-IAMMFADevice -UserName $username -ErrorVariable err).SerialNumber
         if ($err){  
@@ -72,7 +82,7 @@ if (!$profilename){
     }    
 
     # assume the role and get the temp credential
-    if ($requiremfa = "true") {
+    if ($requiremfa -eq "true") {
         $RoleCred = $(Use-STSRole -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
         if ($err) {
             Write-Host $err
@@ -100,7 +110,7 @@ else {
     }
     
     # Get the MFA arn from the username
-    if ($requiremfa = "true") {
+    if ($requiremfa -eq "true") {
         $mfaarn = $(Get-IAMMFADevice -profilename $profilename -UserName $username -ErrorVariable err).SerialNumber
         if ($err){
             write-host $err
@@ -120,7 +130,7 @@ else {
     }
 
     # assume the role and get the temp credential
-    if ($requiremfa = "true") {
+    if ($requiremfa -eq "true") {
         $RoleCred = $(Use-STSRole -ProfileName $profilename -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
         if ($err) {
             write-host $err
