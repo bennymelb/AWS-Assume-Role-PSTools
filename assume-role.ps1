@@ -6,8 +6,11 @@ Param (
     # MFA code from the MFA device
     [string]$mfacode,
 
-    # The IAM role you want to assume
+    # The IAM role you want to assume, use this if the iam role is in the same aws account
     [string]$role,
+
+    # The arn of the IAM role you want to assume, use this if the iam role is in a different aws account
+    [string]$rolearn, 
 
     # AWS profile (optional)
     [string]$profile,
@@ -59,11 +62,13 @@ if (!$profile){
     }    
     
     # Get the role ARN from the role name
-    $rolearn = $(Get-IAMRole -RoleName $role -ErrorVariable err).Arn
-    if ($err) {
-        write-host $err
-        write-host "Error!!! failed to get the role $role arn"
-        exit 1
+    if (!$rolearn){ 
+       $rolearn = $(Get-IAMRole -RoleName $role -ErrorVariable err).Arn
+        if ($err) {
+            write-host $err
+            write-host "Error!!! failed to get the role $role arn"
+            exit 1
+        }
     }    
 
     # assume the role and get the temp credential
@@ -105,13 +110,15 @@ else {
     }   
     
     # Get the role ARN from the role name
-    $rolearn = $(Get-IAMRole -profilename $profile -RoleName $role -ErrorVariable err).Arn
-    if ($err) {
-        write-host $err
-        write-host "Error!!! failed to get the role $role arn"
-        exit 1
-    }    
-
+    if (!$rolearn){
+        $rolearn = $(Get-IAMRole -profilename $profile -RoleName $role -ErrorVariable err).Arn
+        if ($err) {
+            write-host $err
+            write-host "Error!!! failed to get the role $role arn"
+            exit 1
+        }    
+    }
+    
     # assume the role and get the temp credential
     if ($requiremfa = "true") {
         $RoleCred = $(Use-STSRole -ProfileName $profile -RoleArn $rolearn -RoleSessionName $(New-Guid).ToString() -TokenCode $mfacode -SerialNumber $mfaarn -ErrorVariable err).Credentials
