@@ -6,11 +6,11 @@ Param (
     # MFA code from the MFA device
     [string]$mfacode,
 
-    # The IAM role you want to assume, use this if the iam role is in the same aws account
+    # The IAM role you want to assume
     [string]$role,
 
-    # The arn of the IAM role you want to assume, use this if the iam role is in a different aws account
-    [string]$rolearn, 
+    # The aws account id of the role you want to assume
+    [string]$awsaccountid, 
 
     # AWS profile (optional)
     [string]$profilename,
@@ -39,18 +39,9 @@ if (!$sessionname){
 }
 
 # Prompt user to enter the role name or arn if they didn't supply one
-if ( (!$role) -and (!$rolearn) ) {
-    $sw = Read-Host "Are you supplying just the role name or the full arn [ role | rolearn ]"
-    if ($sw -eq "role") {
-        $role = Read-Host "Please enter the name of the role you wanted to assume"
-    }
-    elseif ($sw -eq "rolearn") {
-        $rolearn = Read-Host "Please enter the arn of the role you want to assume"
-    }
-    else {
-        Read-Host "Invalid input detected, press any button to exit"
-        exit 1
-    }
+if ( (!$role) -and (!$awsaccountid) ) {
+    $role = Read-Host "Please enter the name of the role you wanted to assume"
+    $awsaccountid = Read-Host "Please enter the arn of the role you want to assume, leave this blank if the role you want to assume is in the same aws account"
 }
 
 # Prompt user to enter the mfa code if they didn't supply one when calling this script
@@ -79,14 +70,17 @@ if (!$profilename){
         }
     }    
     
-    # Get the role ARN from the role name
-    if (!$rolearn){ 
+    # construct the role arn
+    if (!$awsaccountid){ 
        $rolearn = $(Get-IAMRole -RoleName $role -ErrorVariable err).Arn
         if ($err) {
             write-host $err
             write-host "Error!!! failed to get the role $role arn"
             exit 1
         }
+    }
+    else {
+        $rolearn = "arn:aws:iam::" + $awsaccountid + ":role/" + $role
     }    
 
     # assume the role and get the temp credential
@@ -126,8 +120,8 @@ else {
         }
     }   
     
-    # Get the role ARN from the role name
-    if (!$rolearn){
+    # construct the role arn
+    if (!$awsaccountid){
         $rolearn = $(Get-IAMRole -profilename $profilename -RoleName $role -ErrorVariable err).Arn
         if ($err) {
             write-host $err
@@ -135,6 +129,9 @@ else {
             exit 1
         }    
     }
+    else {
+        $rolearn = "arn:aws:iam::" + $awsaccountid + ":role/" + $role
+    }    
 
     # assume the role and get the temp credential
     if ($requiremfa -eq "true") {
@@ -160,5 +157,10 @@ $env:AWS_ACCESS_KEY_ID = $RoleCred.AccessKeyId
 $env:AWS_SECRET_ACCESS_KEY = $RoleCred.SecretAccessKey
 $env:AWS_SESSION_TOKEN = $RoleCred.SessionToken
 
-write-host "You've assumed the role $role , the session name is $sessionname" -ForegroundColor Green
+if (!$awsaccountid){
+    write-host "You've assumed the role $role, your session name is $sessionname" -ForegroundColor Green
+}
+else {
+    write-host "You've assumed the role $role in account $awsaccountid, your session name is $sessionname" -ForegroundColor Green
+}
 Read-Host "Press enter to contine the session"
